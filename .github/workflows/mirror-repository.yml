@@ -58,14 +58,15 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$MIRROR_RELEASES_URL" \
-            | jq '.[] | .tag_name' | tee response_body))
+            | tee response_body \
+            | jq -r '.[] | .tag_name'))
           { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
           
           function create_github_release() {
             local TAG_NAME
             TAG_NAME="$1"
-            CREATE_RELEASE_JSON="$(jq -r '.[] | select (.tag_name == $tagName)' --arg tagName "$TAG_NAME" <<< "$SOURCE_RELEASES_JSON")"
-            { [[ '${{ runner.debug }}' == '1' ]] && echo "JSON to create release: $CREATE_RELEASE_JSON"; } || true
+            CREATE_RELEASE_JSON="$(jq -c '.[] | select (.tag_name == $tagName)' --arg tagName "$TAG_NAME" <<< "$SOURCE_RELEASES_JSON")"
+            echo "JSON to create release: $CREATE_RELEASE_JSON"
 
             curl -s -L \
               -X POST \
