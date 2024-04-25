@@ -38,7 +38,7 @@ jobs:
           git push --mirror 'https://token:${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}@github.com/${{ github.repository }}.git'
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
