@@ -40,8 +40,9 @@ jobs:
       # GitHub automatically remove releases after remove related ref in repository. No need to do manual delete
       - name: Create new GitHub releases
         run: |
-          SOURCE_RELEASES_URL='https://api.github.com/repos/KupchinskiyVasiliy/mirrortest-source/releases'
+          SOURCE_RELEASES_URL='https://api.github.com/repos/${{ vars.OV_SOURCE_ORGANIZATION }}/mirrortest-source/releases'
           export SOURCE_RELEASES_JSON=$(curl -s -L \
+            -H 'Authorization: Bearer ${{ secrets.OV_SOURCE_REPOSITORY_PAT_READ_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$SOURCE_RELEASES_URL" \
             | jq '[sort_by(.created_at, .published_at) | .[] | {tag_name: .tag_name, target_commitish: .target_commitish, name: .name, body: .body, draft: .draft, prerelease: .prerelease, generate_release_notes: false, make_latest: "legacy"}]')
