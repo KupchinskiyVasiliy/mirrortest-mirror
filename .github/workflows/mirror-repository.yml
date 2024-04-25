@@ -2,6 +2,8 @@ name: Mirror repository
 
 # Required secrets:
 # OV_SOURCE_REPOSITORY_PAT_READ_REPO - Personal access token, that can be used to access source private repository
+# OV_MIRROR_REPOSITORY_PAT_WRITE_REPO - Personal access token, that can be used to write to mirror repository
+# (also it should have 'workflow' permission to overwrite .github/actions/*.yml files)
 
 # Required variables:
 # OV_SOURCE_ORGANIZATION - Organization of source repositories
@@ -11,8 +13,6 @@ on:
 #  Uncomment to automatically sync the repository on schedule
 #  schedule:
 #    - cron: "0 0 * * *"
-
-permissions: write-all
 
 env:
   GIT_USERNAME: 'ov-automation'
@@ -35,7 +35,7 @@ jobs:
       - name: Update mirror repository
         run: |
           cd "$OLD_REPOSITORY_DIR_NAME"
-          git push --mirror 'https://token:${{ github.token }}@github.com/${{ github.repository }}.git'
+          git push --mirror 'https://token:${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}@github.com/${{ github.repository }}.git'
 
       # GitHub automatically remove releases after remove related ref in repository. No need to do manual delete
       - name: Create new GitHub releases
@@ -52,7 +52,7 @@ jobs:
           MIRROR_RELEASES_URL='https://api.github.com/repos/${{ github.repository }}/releases'
           export MIRROR_TAG_NAMES
           MIRROR_TAG_NAMES=$(curl \
-            -H 'Authorization: Bearer ${{ github.token }}' \
+            -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$MIRROR_RELEASES_URL" \
             | jq '.[] | .tag_name')
@@ -66,7 +66,7 @@ jobs:
             curl -L \
               -X POST \
               -H 'Accept: application/vnd.github+json' \
-              -H 'Authorization: Bearer ${{ github.token }}' \
+              -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
               -H 'X-GitHub-Api-Version: 2022-11-28' \
               "$MIRROR_RELEASES_URL" \
               -d "$CREATE_RELEASE_JSON"
