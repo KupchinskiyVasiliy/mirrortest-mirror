@@ -91,7 +91,6 @@ jobs:
             return 1
           }
 
-          CREATE_RELEASE_TAG_NAMES=()
           for SOURCE_TAG_NAME in "${SOURCE_TAG_NAMES[@]}"; do
             if contains_mirror_tag "$SOURCE_TAG_NAME"; then
               echo "Skipping release tag [$SOURCE_TAG_NAME]"
