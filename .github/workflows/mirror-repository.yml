@@ -37,15 +37,17 @@ jobs:
           cd "$OLD_REPOSITORY_DIR_NAME"
           git push --mirror 'https://token:${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}@github.com/${{ github.repository }}.git'
 
+      - name: Prepare Python requirements
+        run: echo 'PyGithub == 2.3.0' > requirements.txt
+
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
           cache: pip
 
-      - name: Prepare update release script
+      - name: Update releases
         run: |
-          pip install PyGithub                    
           python - << EOF
           from github import Auth
           from github import Github
