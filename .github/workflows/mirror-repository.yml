@@ -56,7 +56,7 @@ jobs:
             -H 'Authorization: Bearer ${{ github.token }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$MIRROR_RELEASES_URL" \
-            | jq '.[] | .tag_name'
+            | jq '.[] | .tag_name')
           
           function create_github_release() {
             local TAG_NAME
