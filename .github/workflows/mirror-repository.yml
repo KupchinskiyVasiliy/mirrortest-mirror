@@ -65,7 +65,7 @@ jobs:
             local TAG_NAME
             TAG_NAME="$1"
             CREATE_RELEASE_JSON="$(jq -r '.[] | select (.tag_name == $tagName)' --arg tagName "$TAG_NAME" <<< "$SOURCE_RELEASES_JSON")"
-            echo "JSON to create release: $CREATE_RELEASE_JSON"
+            { [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && echo "JSON to create release: $CREATE_RELEASE_JSON"; } || true
 
             curl -s -L \
               -X POST \
