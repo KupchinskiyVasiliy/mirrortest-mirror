@@ -37,8 +37,7 @@ jobs:
           cd "$OLD_REPOSITORY_DIR_NAME"
           git push --mirror 'https://token:${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}@github.com/${{ github.repository }}.git'
 
-      # GitHub automatically remove releases after remove related ref in repository. No need to do manual delete
-      - name: Create new GitHub releases
+      - name: Delete nonexistent and create new GitHub releases
         run: |
           SOURCE_RELEASES_URL='https://api.github.com/repos/${{ vars.OV_SOURCE_ORGANIZATION }}/mirrortest-source/releases'
           export SOURCE_RELEASES_JSON=$(curl -s -L \
@@ -46,9 +45,9 @@ jobs:
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$SOURCE_RELEASES_URL" \
             | tee response_body \
-            | jq '[sort_by(.created_at, .published_at) | .[] | {tag_name: .tag_name, target_commitish: .target_commitish, name: .name, body: .body, draft: .draft, prerelease: .prerelease, generate_release_notes: false, make_latest: "legacy"}]')
+            | jq '[sort_by(.created_at, .published_at) | .[] | {id: .id, tag_name: .tag_name, target_commitish: .target_commitish, name: .name, body: .body, draft: .draft, prerelease: .prerelease, generate_release_notes: false, make_latest: "legacy"}]')
           { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
-          
+          export SOURCE_TAG_NAMES
           SOURCE_TAG_NAMES=($(jq -r '.[] | .tag_name' <<< "$SOURCE_RELEASES_JSON"))
           echo "Source tag names: ${SOURCE_TAG_NAMES[@]}"
 
@@ -67,7 +66,7 @@ jobs:
           function create_github_release() {
             local TAG_NAME
             TAG_NAME="$1"
-            CREATE_RELEASE_JSON="$(jq -c '.[] | select (.tag_name == $tagName)' --arg tagName "$TAG_NAME" <<< "$SOURCE_RELEASES_JSON")"
+            CREATE_RELEASE_JSON="$(jq -c '.[] | select (.tag_name == $tagName) | {tag_name: .tag_name, target_commitish: .target_commitish, name: .name, body: .body, draft: .draft, prerelease: .prerelease, generate_release_notes: false, make_latest: "legacy"}' --arg tagName "$TAG_NAME" <<< "$SOURCE_RELEASES_JSON")"
             echo "JSON to create release: $CREATE_RELEASE_JSON"
 
             curl -s -L \
@@ -80,6 +79,34 @@ jobs:
             { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
           }
           
+          function delete_github_release() {
+            local TAG_NAME
+            TAG_NAME="$1"
+            DELETE_RELEASE_ID="$(jq -c '.[] | select (.tag_name == $tagName) | .id' --arg tagName "$TAG_NAME" <<< "$SOURCE_RELEASES_JSON")"
+            echo "Delete release ID: $DELETE_RELEASE_ID"
+
+            curl -s -L \
+              -X DELETE \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "$MIRROR_RELEASES_URL/$DELETE_RELEASE_ID" > response_body
+            { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
+          }
+          
+          function contains_source_tag() {
+            local MIRROR_TAG
+            MIRROR_TAG="$1"
+
+            for SOURCE_TAG_NAME in "${SOURCE_TAG_NAMES[@]}"; do
+              if [[ "$SOURCE_TAG_NAME" == "MIRROR_TAG" ]]; then
+                return 0
+              fi
+            done
+
+            return 1
+          }
+
           function contains_mirror_tag() {
             local SOURCE_TAG
             SOURCE_TAG="$1"
@@ -92,6 +119,15 @@ jobs:
 
             return 1
           }
+
+          for MIRROR_TAG_NAME in "${MIRROR_TAG_NAMES[@]}"; do
+            if contains_source_tag "$MIRROR_TAG_NAME"; then
+              continue
+            fi
+
+            echo "Deleting release for tag [$MIRROR_TAG_NAME]"
+            delete_github_release "$MIRROR_TAG_NAME"
+          done
 
           for SOURCE_TAG_NAME in "${SOURCE_TAG_NAMES[@]}"; do
             if contains_mirror_tag "$SOURCE_TAG_NAME"; then
