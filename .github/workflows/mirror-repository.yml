@@ -93,10 +93,10 @@ jobs:
           CREATE_RELEASE_TAG_NAMES=()
           for SOURCE_TAG_NAME in "${SOURCE_TAG_NAMES[@]}"; do
             if contains_mirror_tag "$SOURCE_TAG_NAME"; then
-              echo "Skipping $SOURCE_TAG_NAME"
+              echo "Skipping release tag [$SOURCE_TAG_NAME]"
               continue
             fi
 
-            echo "Creating GitHub release for $SOURCE_TAG_NAME"
+            echo "Creating release for tag [$SOURCE_TAG_NAME]"
             create_github_release "$SOURCE_TAG_NAME"
           done
