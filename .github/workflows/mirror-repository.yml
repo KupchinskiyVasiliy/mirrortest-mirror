@@ -50,17 +50,18 @@ jobs:
           { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
           
           SOURCE_TAG_NAMES=($(jq -r '.[] | .tag_name' <<< "$SOURCE_RELEASES_JSON"))
-          
+          echo "Source tag names: ${SOURCE_TAG_NAMES[@]}"
+
           export MIRROR_RELEASES_URL
-          MIRROR_RELEASES_URL='https://api.github.com/repos/${{ github.repository }}/releases'
+          MIRROR_RELEASES_URL='https://api.github.com/repos/KupchinskiyVasiliy/mirrortest-mirror/releases'
           export MIRROR_TAG_NAMES
           MIRROR_TAG_NAMES=($(curl -s -L \
-            -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$MIRROR_RELEASES_URL" \
             | tee response_body \
             | jq -r '.[] | .tag_name'))
           { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
+          echo "Mirror tag names: ${MIRROR_TAG_NAMES[@]}"
           
           function create_github_release() {
             local TAG_NAME
