@@ -45,7 +45,10 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.OV_SOURCE_REPOSITORY_PAT_READ_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$SOURCE_RELEASES_URL" \
+            | tee response_body
             | jq '[sort_by(.created_at, .published_at) | .[] | {tag_name: .tag_name, target_commitish: .target_commitish, name: .name, body: .body, draft: .draft, prerelease: .prerelease, generate_release_notes: false, make_latest: "legacy"}]')
+          { [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && cat response_body; } || true
+          
           SOURCE_TAG_NAMES=($(jq -r '.[] | .tag_name' <<< "$SOURCE_RELEASES_JSON"))
           
           export MIRROR_RELEASES_URL
@@ -55,7 +58,8 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$MIRROR_RELEASES_URL" \
-            | jq '.[] | .tag_name')
+            | jq '.[] | .tag_name' | tee response_body)
+          { [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && cat response_body; } || true
           
           function create_github_release() {
             local TAG_NAME
@@ -69,7 +73,8 @@ jobs:
               -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
               -H 'X-GitHub-Api-Version: 2022-11-28' \
               "$MIRROR_RELEASES_URL" \
-              -d "$CREATE_RELEASE_JSON"
+              -d "$CREATE_RELEASE_JSON" > response_body
+            { [[ "$ACTIONS_STEP_DEBUG" == "true" ]] && cat response_body; } || true
           }
           
           function contains_mirror_tag() {
