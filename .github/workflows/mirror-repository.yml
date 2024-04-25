@@ -54,11 +54,11 @@ jobs:
           export MIRROR_RELEASES_URL
           MIRROR_RELEASES_URL='https://api.github.com/repos/${{ github.repository }}/releases'
           export MIRROR_TAG_NAMES
-          MIRROR_TAG_NAMES=$(curl -s -L \
+          MIRROR_TAG_NAMES=($(curl -s -L \
             -H 'Authorization: Bearer ${{ secrets.OV_MIRROR_REPOSITORY_PAT_WRITE_REPO }}' \
             -H 'X-GitHub-Api-Version: 2022-11-28' \
             "$MIRROR_RELEASES_URL" \
-            | jq '.[] | .tag_name' | tee response_body)
+            | jq '.[] | .tag_name' | tee response_body))
           { [[ '${{ runner.debug }}' == '1' ]] && cat response_body; } || true
           
           function create_github_release() {
