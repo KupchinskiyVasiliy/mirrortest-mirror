@@ -19,6 +19,7 @@ env:
   GIT_EMAIL: 'github-actions@github.com'
   OLD_REPOSITORY_DIR_NAME: old-repository.git
   bla: 'blah'
+  bla2: 'blah'
 
 jobs:
   mirror_repository:
